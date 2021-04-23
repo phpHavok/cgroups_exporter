@@ -36,7 +36,7 @@ func main() {
 	cgroupsCollector := newCgroupsCollector(*cgroupSpecPathPtr, *cgroupsRootPathPtr)
 	prometheus.MustRegister(cgroupsCollector)
 	// Serve Prometheus HTTP requests
-	log.Printf("listening on port %s\n", *portPtr)
+	log.Printf("listening on port %s", *portPtr)
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":"+(*portPtr), nil))
 }
