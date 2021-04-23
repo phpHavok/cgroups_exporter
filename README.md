@@ -36,10 +36,6 @@ cgroups will be ignored. If you want to track cgroups for two or more
 different processes, you should run two or more copies of this exporter on
 different ports.
 
-The `-i` option is the most critical and specifies the path to the input file
-from which to read the schedule of events. If not specified, the program will
-read from standard input.
-
 The `-cgroups-root` option allows you to change the default location of the
 cgroupsv1 hierarchy if it happens to be mounted somewhere unusual. This can also
 be handy when using a container in case you want to mount the hierarchy in a
