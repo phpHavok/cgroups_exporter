@@ -59,7 +59,7 @@ follows:
 ```
 docker run -t --rm \
     --mount type=bind,src=/sys/fs/cgroup,dst=/sys/fs/cgroup,readonly \
-    phphavok/cgroups_exporter
+    phphavok/cgroups_exporter -cgroup-spec /proc/31337/cgroup
 ```
 
 We specify `-t` so that we're allocated a pseudo-terminal which makes the
@@ -84,5 +84,5 @@ container from Docker Hub.
 singularity run \
     -B /sys/fs/cgroup:/sys/fs/cgroup \
     -B `pwd`:/data \
-    docker://phphavok/cgroups_exporter
+    docker://phphavok/cgroups_exporter -cgroup-spec /proc/31337/cgroup
 ```
