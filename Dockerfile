@@ -6,4 +6,4 @@ WORKDIR /usr/local/cgroups_exporter
 
 RUN make
 
-ENTRYPOINT ["./cgroups_exporter"]
+ENTRYPOINT ["/usr/local/cgroups_exporter/cgroups_exporter"]
