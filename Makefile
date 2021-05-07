@@ -1,5 +1,5 @@
 TARGET:=cgroups_exporter
-SOURCES:=main.go collector.go cgroups/cgroups.go cgroups/cpuset.go cgroups/cpuacct.go
+SOURCES:=main.go cgroups/cgroups.go cgroups/cpuset.go cgroups/cpuacct.go collectors/file.go collectors/slurm.go
 
 $(TARGET): $(SOURCES)
 	go build -o $@

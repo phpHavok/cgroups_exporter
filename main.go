@@ -4,7 +4,7 @@ import (
 	"flag"
 	"net/http"
 
-	cg "github.com/phpHavok/cgroups_exporter/cgroups"
+	"github.com/phpHavok/cgroups_exporter/collectors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -18,22 +18,23 @@ func main() {
 	portPtr := flag.String("port", officialPort, "the port to listen on")
 	helpPtr := flag.Bool("help", false, "print usage")
 	cgroupsRootPathPtr := flag.String("cgroups-root", "/sys/fs/cgroup", "path to the root of the cgroupsv1 hierarchy")
-	cgroupSpecPathPtr := flag.String("cgroup-spec", "/proc/1/cgroup", "path to the cgroup specification file to use")
+	methodPtr := flag.String("method", "slurm", "one of: file, slurm")
+	filePtr := flag.String("file", "/proc/1/cgroup", "path to the cgroup specification file to use if method is file, ignored otherwise")
 	flag.Parse()
 	if *helpPtr {
 		flag.Usage()
 		return
 	}
-	// Print some help debug information
 	log.Printf("serving cgroups from hierarchy root %s", *cgroupsRootPathPtr)
-	log.Printf("reading cgroups from specification %s", *cgroupSpecPathPtr)
-	// Trial load to make sure we won't hit problems later in the application
-	_, err := cg.LoadCgroups(*cgroupSpecPathPtr, *cgroupsRootPathPtr)
-	if err != nil {
-		log.Fatalf("unable to read cgroups specification file: %v", err)
-	}
 	// Create and register our cgroups collector
-	cgroupsCollector := newCgroupsCollector(*cgroupSpecPathPtr, *cgroupsRootPathPtr)
+	var cgroupsCollector prometheus.Collector
+	if *methodPtr == "file" {
+		cgroupsCollector = collectors.NewCgroupsFileCollector(*filePtr, *cgroupsRootPathPtr)
+	} else if *methodPtr == "slurm" {
+		cgroupsCollector = collectors.NewCgroupsSlurmCollector(*cgroupsRootPathPtr)
+	} else {
+		log.Fatalf("invalid method %s", *methodPtr)
+	}
 	prometheus.MustRegister(cgroupsCollector)
 	// Serve Prometheus HTTP requests
 	log.Printf("listening on port %s", *portPtr)

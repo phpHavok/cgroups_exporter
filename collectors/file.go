@@ -1,4 +1,4 @@
-package main
+package collectors
 
 import (
 	"strconv"
@@ -8,29 +8,29 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type cgroupsCollector struct {
+type cgroupsFileCollector struct {
 	cpuacctUsagePerCPUMetric *prometheus.Desc
-	cgroupSpecPath           string
+	cgroupFilePath           string
 	cgroupsRootPath          string
 }
 
-func newCgroupsCollector(cgroupSpecPath string, cgroupsRootPath string) *cgroupsCollector {
-	return &cgroupsCollector{
-		cpuacctUsagePerCPUMetric: prometheus.NewDesc("cgroups_cpuacct_usage_per_cpu_ns",
+func NewCgroupsFileCollector(cgroupFilePath string, cgroupsRootPath string) *cgroupsFileCollector {
+	return &cgroupsFileCollector{
+		cpuacctUsagePerCPUMetric: prometheus.NewDesc("cgroups_file_cpuacct_usage_per_cpu_ns",
 			"Per-nanosecond usage of each CPU in a cgroup",
-			[]string{"cpu_id"}, nil,
+			[]string{"file_path", "cpu_id"}, nil,
 		),
-		cgroupSpecPath:  cgroupSpecPath,
+		cgroupFilePath:  cgroupFilePath,
 		cgroupsRootPath: cgroupsRootPath,
 	}
 }
 
-func (collector *cgroupsCollector) Describe(ch chan<- *prometheus.Desc) {
+func (collector *cgroupsFileCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.cpuacctUsagePerCPUMetric
 }
 
-func (collector *cgroupsCollector) Collect(ch chan<- prometheus.Metric) {
-	cgroups, err := cg.LoadCgroups(collector.cgroupSpecPath, collector.cgroupsRootPath)
+func (collector *cgroupsFileCollector) Collect(ch chan<- prometheus.Metric) {
+	cgroups, err := cg.LoadCgroups(collector.cgroupFilePath, collector.cgroupsRootPath)
 	if err != nil {
 		log.Fatalf("unable to read cgroups specification file: %v", err)
 	}
@@ -41,6 +41,6 @@ func (collector *cgroupsCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 	for cpuID, cpuUsage := range usagePerCPU {
 		ch <- prometheus.MustNewConstMetric(collector.cpuacctUsagePerCPUMetric,
-			prometheus.GaugeValue, float64(cpuUsage), strconv.Itoa(cpuID))
+			prometheus.GaugeValue, float64(cpuUsage), collector.cgroupFilePath, strconv.Itoa(cpuID))
 	}
 }
