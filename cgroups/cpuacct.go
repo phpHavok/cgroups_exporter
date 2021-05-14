@@ -17,7 +17,6 @@ func (c cpuacct) GetUsagePerCPU() ([]int, error) {
 	if err != nil {
 		return usage, err
 	}
-	log.Println(data)
 	for _, usageStr := range strings.Split(strings.TrimSpace(data), " ") {
 		usageInt, err := strconv.Atoi(strings.TrimSpace(usageStr))
 		if err != nil {
