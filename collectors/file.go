@@ -10,6 +10,7 @@ import (
 
 type cgroupsFileCollector struct {
 	cpuacctUsagePerCPUMetric *prometheus.Desc
+	memoryUsageInBytesMetric *prometheus.Desc
 	cgroupFilePath           string
 	cgroupsRootPath          string
 }
@@ -20,6 +21,10 @@ func NewCgroupsFileCollector(cgroupFilePath string, cgroupsRootPath string) *cgr
 			"Per-nanosecond usage of each CPU in a cgroup",
 			[]string{"file_path", "cpu_id"}, nil,
 		),
+		memoryUsageInBytesMetric: prometheus.NewDesc("cgroups_file_memory_usage_in_bytes",
+			"Current memory used by the cgroup in bytes",
+			[]string{"file_path"}, nil,
+		),
 		cgroupFilePath:  cgroupFilePath,
 		cgroupsRootPath: cgroupsRootPath,
 	}
@@ -27,6 +32,7 @@ func NewCgroupsFileCollector(cgroupFilePath string, cgroupsRootPath string) *cgr
 
 func (collector *cgroupsFileCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.cpuacctUsagePerCPUMetric
+	ch <- collector.memoryUsageInBytesMetric
 }
 
 func (collector *cgroupsFileCollector) Collect(ch chan<- prometheus.Metric) {
@@ -43,4 +49,11 @@ func (collector *cgroupsFileCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(collector.cpuacctUsagePerCPUMetric,
 			prometheus.GaugeValue, float64(cpuUsage), collector.cgroupFilePath, strconv.Itoa(cpuID))
 	}
+	// memoryUsageInBytesMetric
+	memoryUsageBytes, err := cgroups.Memory.GetUsageInBytes()
+	if err != nil {
+		log.Fatalf("unable to read memory usage in bytes: %v", err)
+	}
+	ch <- prometheus.MustNewConstMetric(collector.memoryUsageInBytesMetric,
+		prometheus.GaugeValue, float64(memoryUsageBytes), collector.cgroupFilePath)
 }

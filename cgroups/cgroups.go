@@ -21,6 +21,7 @@ const (
 type Cgroups struct {
 	Cpuset  cpuset
 	Cpuacct cpuacct
+	Memory  memory
 }
 
 func readFile(root string, filename string) (string, error) {
@@ -66,6 +67,8 @@ func LoadCgroups(specPath string, cgroupsRootPath string) (Cgroups, error) {
 				cgroups.Cpuset = cpuset(cgroupAbsolutePath)
 			case "cpuacct":
 				cgroups.Cpuacct = cpuacct(cgroupAbsolutePath)
+			case "memory":
+				cgroups.Memory = memory(cgroupAbsolutePath)
 			default:
 				log.Debugf("skipping unimplemented subsystem: %v", subsystem)
 			}

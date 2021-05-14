@@ -12,6 +12,7 @@ import (
 
 type cgroupsSlurmCollector struct {
 	cpuacctUsagePerCPUMetric *prometheus.Desc
+	memoryUsageInBytesMetric *prometheus.Desc
 	cgroupsRootPath          string
 }
 
@@ -21,12 +22,17 @@ func NewCgroupsSlurmCollector(cgroupsRootPath string) *cgroupsSlurmCollector {
 			"Per-nanosecond usage of each CPU in a cgroup",
 			[]string{"user_id", "job_id", "step_id", "task_id", "cpu_id"}, nil,
 		),
+		memoryUsageInBytesMetric: prometheus.NewDesc("cgroups_slurm_memory_usage_in_bytes",
+			"Current memory used by the cgroup in bytes",
+			[]string{"user_id", "job_id", "step_id", "task_id"}, nil,
+		),
 		cgroupsRootPath: cgroupsRootPath,
 	}
 }
 
 func (collector *cgroupsSlurmCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.cpuacctUsagePerCPUMetric
+	ch <- collector.memoryUsageInBytesMetric
 }
 
 func (collector *cgroupsSlurmCollector) Collect(ch chan<- prometheus.Metric) {
@@ -79,6 +85,13 @@ func (collector *cgroupsSlurmCollector) Collect(ch chan<- prometheus.Metric) {
 					ch <- prometheus.MustNewConstMetric(collector.cpuacctUsagePerCPUMetric,
 						prometheus.GaugeValue, float64(cpuUsage), user_id, job_id, step_id, task_id, strconv.Itoa(cpuID))
 				}
+				// memoryUsageInBytesMetric
+				memoryUsageBytes, err := cgroups.Memory.GetUsageInBytes()
+				if err != nil {
+					log.Fatalf("unable to read memory usage in bytes: %v", err)
+				}
+				ch <- prometheus.MustNewConstMetric(collector.memoryUsageInBytesMetric,
+					prometheus.GaugeValue, float64(memoryUsageBytes), user_id, job_id, step_id, task_id)
 			}
 		}
 	}
