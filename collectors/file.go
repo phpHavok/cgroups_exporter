@@ -11,6 +11,7 @@ import (
 type cgroupsFileCollector struct {
 	cpuacctUsagePerCPUMetric *prometheus.Desc
 	memoryUsageInBytesMetric *prometheus.Desc
+	cpusetCPUsMetric         *prometheus.Desc
 	cgroupFilePath           string
 	cgroupsRootPath          string
 }
@@ -25,6 +26,10 @@ func NewCgroupsFileCollector(cgroupFilePath string, cgroupsRootPath string) *cgr
 			"Current memory used by the cgroup in bytes",
 			[]string{"file_path"}, nil,
 		),
+		cpusetCPUsMetric: prometheus.NewDesc("cgroups_file_cpuset_cpus",
+			"List of CPUs and whether or not they are in the cpuset cgroup",
+			[]string{"file_path", "cpu_id"}, nil,
+		),
 		cgroupFilePath:  cgroupFilePath,
 		cgroupsRootPath: cgroupsRootPath,
 	}
@@ -33,6 +38,7 @@ func NewCgroupsFileCollector(cgroupFilePath string, cgroupsRootPath string) *cgr
 func (collector *cgroupsFileCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.cpuacctUsagePerCPUMetric
 	ch <- collector.memoryUsageInBytesMetric
+	ch <- collector.cpusetCPUsMetric
 }
 
 func (collector *cgroupsFileCollector) Collect(ch chan<- prometheus.Metric) {
@@ -56,4 +62,13 @@ func (collector *cgroupsFileCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 	ch <- prometheus.MustNewConstMetric(collector.memoryUsageInBytesMetric,
 		prometheus.GaugeValue, float64(memoryUsageBytes), collector.cgroupFilePath)
+	// cpusetCPUsMetric
+	cpusetCPUs, err := cgroups.Cpuset.GetCpus()
+	if err != nil {
+		log.Fatalf("unable to read cpuset CPUs: %v", err)
+	}
+	for _, cpuID := range cpusetCPUs {
+		ch <- prometheus.MustNewConstMetric(collector.cpusetCPUsMetric,
+			prometheus.GaugeValue, float64(1), collector.cgroupFilePath, strconv.Itoa(cpuID))
+	}
 }

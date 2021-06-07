@@ -13,6 +13,7 @@ import (
 type cgroupsSlurmCollector struct {
 	cpuacctUsagePerCPUMetric *prometheus.Desc
 	memoryUsageInBytesMetric *prometheus.Desc
+	cpusetCPUsMetric         *prometheus.Desc
 	cgroupsRootPath          string
 }
 
@@ -26,6 +27,10 @@ func NewCgroupsSlurmCollector(cgroupsRootPath string) *cgroupsSlurmCollector {
 			"Current memory used by the cgroup in bytes",
 			[]string{"user_id", "job_id", "step_id", "task_id"}, nil,
 		),
+		cpusetCPUsMetric: prometheus.NewDesc("cgroups_slurm_cpuset_cpus",
+			"List of CPUs and whether or not they are in the cpuset cgroup",
+			[]string{"user_id", "job_id", "step_id", "task_id", "cpu_id"}, nil,
+		),
 		cgroupsRootPath: cgroupsRootPath,
 	}
 }
@@ -33,6 +38,7 @@ func NewCgroupsSlurmCollector(cgroupsRootPath string) *cgroupsSlurmCollector {
 func (collector *cgroupsSlurmCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- collector.cpuacctUsagePerCPUMetric
 	ch <- collector.memoryUsageInBytesMetric
+	ch <- collector.cpusetCPUsMetric
 }
 
 func (collector *cgroupsSlurmCollector) Collect(ch chan<- prometheus.Metric) {
@@ -92,6 +98,15 @@ func (collector *cgroupsSlurmCollector) Collect(ch chan<- prometheus.Metric) {
 				}
 				ch <- prometheus.MustNewConstMetric(collector.memoryUsageInBytesMetric,
 					prometheus.GaugeValue, float64(memoryUsageBytes), user_id, job_id, step_id, task_id)
+				// cpusetCPUsMetric
+				cpusetCPUs, err := cgroups.Cpuset.GetCpus()
+				if err != nil {
+					log.Fatalf("unable to read cpuset CPUs: %v", err)
+				}
+				for _, cpuID := range cpusetCPUs {
+					ch <- prometheus.MustNewConstMetric(collector.cpusetCPUsMetric,
+						prometheus.GaugeValue, float64(1), user_id, job_id, step_id, task_id, strconv.Itoa(cpuID))
+				}
 			}
 		}
 	}
