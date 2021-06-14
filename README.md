@@ -94,3 +94,10 @@ singularity run \
     -B `pwd`:/data \
     docker://phphavok/cgroups_exporter -method file -file /proc/31337/cgroup
 ```
+
+## Grafana Dashboard
+
+A convenient Grafana dashboard is available [in this
+repository](grafana/slurm_cgroups_dashboard.json), and is also published as
+[public dashboard 14587](https://grafana.com/grafana/dashboards/14587) for quick
+installation.
