@@ -100,4 +100,5 @@ singularity run \
 A convenient Grafana dashboard is available [in this
 repository](grafana/slurm_cgroups_dashboard.json), and is also published as
 [public dashboard 14587](https://grafana.com/grafana/dashboards/14587) for quick
-installation.
+installation. The provided dashboard works for invocations of the
+cgroups\_exporter that operate in `-method slurm` mode.
